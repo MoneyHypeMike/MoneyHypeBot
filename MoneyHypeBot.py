@@ -7,15 +7,16 @@ import time
 import re
 import pkmnformula
 import pkmndict
+import species
 
 # Information to connect to twitch IRC server
 SERVER = "irc.twitch.tv"
 PORT = 6667
 
 # Information to authenticate to twitch IRC server
-NICK = #insert you twitch bot name here
-PASS = #insert your oauth key given by http://www.twitchapps.com/tmi/ here 
-CHANNEL = #channel the bot logs in
+NICK = "moneyhypebot"
+PASS = "oauth:9w919ckrf5p1mweytkh1w7n4sl8tzjt"
+CHANNEL = "#moneyhypemike"
 # Information to treat data from twitch IRC server
 BUFFSIZE = 1024
 counter = 0
@@ -88,8 +89,8 @@ def convert2int(x):
     except ValueError:
         return "-1"
 
-def dv(str):
-    str_msg = [x for x in str.split(maxsplit=5)[1:]]
+def dv(message):
+    str_msg = [x for x in message.split(maxsplit=5)[1:]]
     len_msg = len(str_msg)
     
     if (4 <= len_msg <= 5):
@@ -105,10 +106,10 @@ def dv(str):
         else:
             return pkmnformula.calculate_dv(str_msg[1], pkmndict.pkmn[str_msg[0]][str_msg[1]], *num_msg)
     else:
-        return "Invalid number of arguments (expected 4 or 5 arguments, received {}).".format(len_msg)
+        return "Invalid number of arguments (expected 4 or 5 arguments, received '{}').".format(len_msg)
 
-def wr(str):
-    str_msg = [x for x in str.split(maxsplit=2)[1:]]
+def wr(message):
+    str_msg = [x for x in message.split(maxsplit=2)[1:]]
     len_msg = len(str_msg)
     
     if str_msg[0] not in pkmndict.wr.keys():
@@ -116,92 +117,102 @@ def wr(str):
     
     if len_msg == 2:
         if str_msg[1] not in pkmndict.wr[str_msg[0]].keys():
-            return "Invalid category name (expected '{}', received '{}'".format("/".join(pkmndict.wr[str_msg[0]].keys()), str_msg[1])
+            return "Invalid category name (expected '{}', received '{}').".format("/".join(pkmndict.wr[str_msg[0]].keys()), str_msg[1])
         
         return pkmndict.wr[str_msg[0]][str_msg[1]]
     elif len_msg == 1:
         return pkmndict.wr[str_msg[0]]
         
     else:
-        return "Invalid number of arguments (expected 2 arguments, received {}).".format(len_msg)
+        return "Invalid number of arguments (expected 2 arguments, received '{}').".format(len_msg)
 
+def dex(message):
+    str_msg = [x for x in message.split(maxsplit=2)[1:]]
+    len_msg = len(str_msg)
+    
+    if len_msg == 2:
+        gen = str_msg[0]
+        specie = str_msg[1].capitalize()
+        try:
+            gen = int(gen)
+            if 2 < gen < 6:
+                try:
+                    return str(species.dex[gen][specie])
+                except KeyError:
+                    return "Invalid pokémon specie (expected a valid pokémon specie, received '{}').".format(specie)
+            else:
+                return "Invalid generation number (expected an integer value between 3 and 5, received '{}').".format(gen)
+        except ValueError:
+            return "'{}' is not an integer.)".format(gen)
+    else:
+        return "Invalid number of arguments (expected 2 arguments, received {}).".format(len_msg)
+    
 # Initialization of the bot
 globalprotection()
 #globalemote()
 
 # Infinite loop to run the bot
 while True:
-    a = irc.recv(BUFFSIZE).decode()
+    a = irc.recv(BUFFSIZE).decode().split("\r\n")
     
-    if a != "":
-        #with open("C:\\Python34\\moneyhypebot.txt", "a", encoding='utf-8') as f1:
-        #    f1.write("\n[" + time.strftime("%x - %X") + "] Before \\r\\n split   : " + repr(a) + "\n")
-        #Receives information from twitch IRC server
-        a = a.split("\r\n")
-        #with open("C:\\Python34\\moneyhypebot.txt", "a", encoding='utf-8') as f2:
-        #    f2.write("[" + time.strftime("%x - %X") + "] After \\r\\n split    : " + repr(a) + "\n")
-    
-        for line in a:
-            #with open("C:\\Python34\\moneyhypebot.txt", "a", encoding='utf-8') as f3:
-            #    f3.write("[" + time.strftime("%x - %X") + "] Before line split   : " + line + "\n")
-            input = line.split(":",2)
-            inputnum = len(input)
+    for line in a:
+        input = line.split(":",2)
+        inputnum = len(input)
         
-            #with open("C:\\Python34\\moneyhypebot.txt", "a", encoding='utf-8') as f4:
-            #    for x in range(inputnum):
-            #        f4.write("[" + time.strftime("%x - %X") + "] After line split " + str(x + 1) + "/" + str(inputnum) + ": " + input[x] + "\n")
+        if inputnum == 2 and "PING" in input[0]:
+            irc.send(("PONG :tmi.twitch.tv\r\n").encode())
+        elif inputnum == 3 and "PRIVMSG" in input[1] and "HISTORYEND" not in input[2]:
+            inputnick = input[1].split("!")[0]
+            inputchan = input[1].split(" ")[2]
+            inputmsg = input[2]
             
-            if inputnum == 2 and "PING" in input[0]:
-                irc.send(("PONG :tmi.twitch.tv\r\n").encode())
-            elif inputnum == 3 and "PRIVMSG" in input[1] and "HISTORYEND" not in input[2]:
-                inputnick = input[1].split("!")[0]
-                inputchan = input[1].split(" ")[2]
-                inputmsg = input[2]
-                
-                if inputmsg.startswith("$dv"):
-                    output(dv(inputmsg.lower()), inputchan)
-                elif inputmsg.startswith("$wr"):
-                    output(wr(inputmsg.lower()), inputchan)
-                elif inputmsg.startswith("$join"):
-                    join(inputmsg, inputnick)
-                elif inputmsg.startswith("$quit"):
-                    quit(inputmsg, inputnick)
-                elif inputmsg.startswith("$spin"):
-                    spin(inputchan, inputmsg)
+            if inputmsg.startswith("$dv"):
+                output(dv(inputmsg.lower()), inputchan)
+            elif inputmsg.startswith("$wr"):
+                output(wr(inputmsg.lower()), inputchan)
+            elif inputmsg.startswith("$dex"):
+                output(dex(inputmsg), inputchan)
+            elif inputmsg.startswith("$join"):
+                join(inputmsg, inputnick)
+            elif inputmsg.startswith("$quit"):
+                quit(inputmsg, inputnick)
+            elif inputmsg.startswith("$spin"):
+                spin(inputchan, inputmsg)                
+            
+            if inputchan == "#werster":                       
+                if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://pastebin.com/kiyRcY3x" not in inputmsg and inputnick != "moneyhypebot":
+                    output("FAQ: http://pastebin.com/kiyRcY3x", inputchan)
+                    #http://pastebin.com/kiyRcY3x
+                    #http://pastebin.com/AX5EGTfF
+                    #http://pastebin.com/S01Syiz0
+                    timer = time.time()
                     
-                
-                if inputchan == "#werster":                       
-                    if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://pastebin.com/S01Syiz0" not in inputmsg and inputnick != "moneyhypebot":
-                        output("FAQ: http://pastebin.com/S01Syiz0", inputchan)
-                        #http://pastebin.com/kiyRcY3x
-                        #http://pastebin.com/AX5EGTfF
-                        #http://pastebin.com/S01Syiz0
-                        timer = time.time()
+                if "KevinTurtle" in inputmsg or "KevinSquirtle" in inputmsg or "WooperZ" in inputmsg:
+                    counter += 1
+                    if counter > 20:
+                        counter = 0
+                        emotes = ["KevinTurtle", "KevinSquirtle", "WooperZ"]
+                        output(random.choice(emotes), inputchan)
+            elif inputchan == "#eekcast":
+                if "KevinTurtle" in inputmsg or "Jebaited" in inputmsg:
+                    counter += 1
+                    if counter > 20:
+                        counter = 0
+                        emotes = ["KevinTurtle", "Jebaited"]
+                        output(random.choice(emotes), inputchan)
                         
-                    if "KevinTurtle" in inputmsg or "KevinSquirtle" in inputmsg or "WooperZ" in inputmsg:
-                        counter += 1
-                        if counter > 20:
-                            counter = 0
-                            emotes = ["KevinTurtle", "KevinSquirtle", "WooperZ"]
-                            output(random.choice(emotes), inputchan)
-                elif inputchan == "#eekcast":
-                    if "KevinTurtle" in inputmsg or "Jebaited" in inputmsg:
-                        counter += 1
-                        if counter > 20:
-                            counter = 0
-                            emotes = ["KevinTurtle", "Jebaited"]
-                            output(random.choice(emotes), inputchan)
-                            
-                    if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://bombch.us/mPW" not in inputmsg and inputnick != "moneyhypebot":
-                        output("FAQ: http://bombch.us/mPW", inputchan)
-                        timer = time.time()
-                        
-                elif inputchan == "#moneyhypemike":
-                    if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://goo.gl/Le2x9r" not in inputmsg and inputnick != "moneyhypebot":
-                        output("FAQ: http://goo.gl/Le2x9r", inputchan)
-                        timer = time.time()
+                if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://bombch.us/mPW" not in inputmsg and inputnick != "moneyhypebot":
+                    output("FAQ: http://bombch.us/mPW", inputchan)
+                    #http://bombch.us/mPW
+                    #http://pastebin.com/4GARS4N6
+                    timer = time.time()
+                    
+            elif inputchan == "#moneyhypemike":
+                if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://goo.gl/Le2x9r" not in inputmsg and inputnick != "moneyhypebot":
+                    output("FAQ: http://goo.gl/Le2x9r", inputchan)
+                    timer = time.time()
 
-                elif inputchan == "#vincento341":
-                    if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://pastebin.com/m7ej5DVS" not in inputmsg and inputnick != "moneyhypebot":
-                        output("FAQ: http://pastebin.com/m7ej5DVS", inputchan)
-                        timer = time.time()
+            elif inputchan == "#vincento341":
+                if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://pastebin.com/m7ej5DVS" not in inputmsg and inputnick != "moneyhypebot":
+                    output("FAQ: http://pastebin.com/m7ej5DVS", inputchan)
+                    timer = time.time()
