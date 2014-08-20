@@ -7,18 +7,21 @@ import time
 import re
 import pkmnformula
 import pkmndict
-import species
+import pokedex
 
 # Information to connect to twitch IRC server
 SERVER = "irc.twitch.tv"
 PORT = 6667
 
 # Information to authenticate to twitch IRC server
-NICK = "moneyhypebot"
-PASS = "oauth:9w919ckrf5p1mweytkh1w7n4sl8tzjt"
-CHANNEL = "#moneyhypemike"
+NICK = #insert twitch name (lower case)
+PASS = #insert oauth from http://www.twitchapps.com/tmi/
+CHANNEL = #insert channel name to join (lower case)
+
 # Information to treat data from twitch IRC server
 BUFFSIZE = 1024
+
+#Counters for emote spam
 counter = 0
 timer = 0
 
@@ -51,10 +54,9 @@ def output(msg, chan):
         
 # Joins an irc channel
 def join(channel, nick):
-    if "moneyhypemike" in nick:
-        temp = "#" + channel[6:]
-        irc.send(("JOIN %s\r\n" % temp).encode())
-        print("Joining %s" % temp)
+    temp = "#" + channel[6:]
+    irc.send(("JOIN %s\r\n" % temp).encode())
+    print("Joining %s" % temp)
 
 # Quits an irc channel
 def quit(channel, nick):
@@ -135,11 +137,11 @@ def dex(message):
         specie = str_msg[1].capitalize()
         try:
             gen = int(gen)
-            if 2 < gen < 6:
+            if gen < 6:
                 try:
-                    return str(species.dex[gen][specie])
+                    return str(pokedex.dex.dex[gen][specie])
                 except KeyError:
-                    return "Invalid pokémon specie (expected a valid pokémon specie, received '{}').".format(specie)
+                    return "Invalid pokémon specie for selected generation (expected a valid pokémon specie, received '{}').".format(specie)
             else:
                 return "Invalid generation number (expected an integer value between 3 and 5, received '{}').".format(gen)
         except ValueError:
