@@ -1,29 +1,29 @@
 # Import necessary modules to run the IRC bot
 import socket
-import string
 import threading
 import random
 import time
-import re
-import pkmnformula
-import pkmndict
+import formulas
 import pokedex
+import worldrecords
 
 # Information to connect to twitch IRC server
 SERVER = "irc.twitch.tv"
 PORT = 6667
 
 # Information to authenticate to twitch IRC server
-NICK = #insert twitch name (lower case)
-PASS = #insert oauth from http://www.twitchapps.com/tmi/
-CHANNEL = #insert channel name to join (lower case)
+NICK = #insert bot name in lowercase here
+PASS = #insert your oauth from http://www.twitchapps.com/tmi/
+CHANNEL = "#insert the channel to join in lowercase
 
 # Information to treat data from twitch IRC server
 BUFFSIZE = 1024
 
-#Counters for emote spam
+#Used for emotes
 counter = 0
 timer = 0
+
+channels = {CHANNEL}
 
 # Connects to twitch IRC server
 print("Creating connection to twitch IRC server ...")
@@ -37,121 +37,213 @@ irc.send(("USER %s %s %s :%s\r\n" % (NICK, NICK, NICK, NICK)).encode())
 irc.send(("JOIN %s\r\n" % CHANNEL).encode())
 print("Connection successful !")
 
-# Global ban protection
 def globalprotection():
+    """Protects against global ban"""
+    
     global queue
     queue = 0
     threading.Timer(30, globalprotection).start()
 
-# Sends message to twitch IRC server
 def output(msg, chan):
+    """Outputs a message in twitch chat"""
+    
     global queue
     queue += 1
     
     if queue < 20:
-        irc.send(("PRIVMSG %s :%s\r\n" % (chan, msg)).encode())
-        print("PRIVMSG %s :%s\r\n" % (chan, msg))
-        
-# Joins an irc channel
-def join(channel, nick):
-    temp = "#" + channel[6:]
-    irc.send(("JOIN %s\r\n" % temp).encode())
-    print("Joining %s" % temp)
+        irc.send(("PRIVMSG {} :{}\r\n".format(chan, msg)).encode())
+        print("{}: {}".format(chan, msg))
 
-# Quits an irc channel
+def join(chan):
+    """Joins a channel"""
+    
+    global channels
+    temp = "#{}".format(chan[6:])
+    irc.send(("JOIN {}\r\n".format(temp).encode()))
+    channels.add(temp)
+    print("Joined {}\nCurrently in the following channels: {}".format(temp, channels))
+
 def quit(channel, nick):
+    """Leaves a channel"""
+    
     if "moneyhypemike" in nick:
+        global channels
         temp = "#" + channel[6:]
-        irc.send(("PART %s\r\n" % temp).encode())
-        print("Quitting %s" % temp)
+        irc.send(("PART {}\r\n".format(temp)).encode())
+        channels.remove(temp)
+        print("Left {}\nCurrently in the following channels: {}".format(temp, channels))
 
-def spin(channel, n=3):
+def spin(num=3):
+    """Returns a slot combination"""
+    
+    num = num.split()[1]
     emotes = ["FrankerZ", "KevinTurtle", "PogChamp", "OpieOP", "Kreygasm", 
               "MVGame", "Jebaited", "Kappa", "PJSalt"]
-    n = int(n.split()[1])
-    slot = ""
-    if n > 5:
-        n = 5
-    for i in range(n):
-        if i == n - 1:
-            slot += random.choice(emotes)
-        else:
-            slot += random.choice(emotes) + "|"
-    output(slot, channel)
     
+    try:
+        num = int(num) 
+        if num > 5: num = 5
+        slot = [random.choice(emotes) for x in range(num)]
+        
+        return "|".join(slot)
+    except ValueError:
+        return "Could not convert '{}' to an integer.".format(num)
+
 def globalemote():
-    emotes = ["KevinTurtle", "KevinSquirtle", "WooperZ"]
-    output(random.choice(emotes), "#werster")
+    """Outputs a random emote in Werster channel"""
+    
+    global channels
+    if "#werster" in channels:
+        emotes = ["KevinTurtle", "KevinSquirtle", "WooperZ"]
+        output(random.choice(emotes), "#werster")
+    
     threading.Timer(180, globalemote).start()
 
-def convert2int(x):
+def stat2int(stat_name):
+    """Returns the integer value of the stat"""
+    names = ["hp", "atk", "def", "spa", "spd", "spe"]
+    
     try:
-        n = int(x)
-        return abs(n)
+        return names.index(stat_name)
     except ValueError:
-        return "-1"
+        return "Invalid stat name (expected hp/atk/def/spa/spd/spe, "\
+               "received '{}').".format(stat_name)
 
 def dv(message):
-    str_msg = [x for x in message.split(maxsplit=5)[1:]]
-    len_msg = len(str_msg)
+    """Returns the possible DV of a pokemon"""
+    info = [x for x in message.split(maxsplit=6)[1:]]
+    num_info = len(info)
+    stat_exp = info[5] if num_info == 6 else 0
     
-    if (4 <= len_msg <= 5):
-        if str_msg[0] not in pkmndict.pkmn.keys():
-            return "Invalid Pokémon name (expected nidoran/totodile/mudkip family, received '{}'".format(str_msg[0])
-        
-        if str_msg[1] not in pkmndict.pkmn[str_msg[0]].keys():
-            return "Invalid stat name (expected hp/atk/def/spa/spd/spe, received '{})'".format(str_msg[1])
-        
-        num_msg = [convert2int(x) for x in str_msg[2:] if convert2int(x) != "-1"]
-        if "-1" in num_msg:
-            return "Could not convert string value '{}' to integer.".format([x for x in str_msg[2:] if convert2int(x) == "-1"])
+    if (5 <= num_info <= 6):
+        try:
+            gen = int(info[0])
+            name = info[1].capitalize()
+            stat_name = stat2int(info[2])
+            level = int(info[3])
+            stat_value = int(info[4])
+            
+            if num_info == 6:
+                stat_exp = int(info[5])
+        except ValueError:
+            return "Could not convert one of the following string to an "\
+                   "integer: '{}' (gen), '{}' (level), '{}' (stat) and '{}' "\
+                   "(stat exp).".format(info[0], info[3], info[4], stat_exp)
         else:
-            return pkmnformula.calculate_dv(str_msg[1], pkmndict.pkmn[str_msg[0]][str_msg[1]], *num_msg)
+            if gen < 0 or gen > 5:
+                return "Invalid generation value (expected 1 or 2, received "\
+                       "'{}')".format(gen)
+            
+            if type(stat_name) == str:
+                return stat_name
+            
+            if level < 0 or level > 100:
+                return "Invalid level value (expected 1-100, received '{}')."\
+                       .format(level)
+            
+            if stat_value < 0 or stat_value > 255:
+                return "Invalid stat value (expected 1-255, received '{}'.)"\
+                       .format(stat_value)
+            
+            if stat_exp < 0 or stat_exp > 65536:
+                return "Invalid stat exp value (expected 1-65536, received "\
+                       "'{}'.)".format(stat_exp)
+            
+            try:
+                specie = pokedex.dex.dex[gen][name]
+                return formulas.calc_dv(gen, specie.base_stats[stat_name], 
+                                        level, stat_value, stat_exp)
+            except KeyError:
+                return "Invalid pokémon specie for selected generation "\
+                           "(expected a valid pokémon specie, received '{}')."\
+                           .format(name)
     else:
-        return "Invalid number of arguments (expected 4 or 5 arguments, received '{}').".format(len_msg)
+        return "Syntax: $dv gen_num pkmn_name stat_name level stat_value "\
+               "base_exp (base_exp is optional and defaults to 0)"
 
 def wr(message):
-    str_msg = [x for x in message.split(maxsplit=2)[1:]]
-    len_msg = len(str_msg)
+    """Returns the world record for the specified game and category"""
+    info = [x for x in message.split(maxsplit=2)[1:]]
+    num_info = len(info)
     
-    if str_msg[0] not in pkmndict.wr.keys():
-        return "Invalid game name (expected '{}', received '{}'".format("/".join(pkmndict.wr.keys()), str_msg[0])
+    if info[0] not in worldrecords.games.keys():
+        return "Invalid game name (expected '{}', received '{}'"\
+               .format("/".join(worldrecords.games.keys()), info[0])
     
-    if len_msg == 2:
-        if str_msg[1] not in pkmndict.wr[str_msg[0]].keys():
-            return "Invalid category name (expected '{}', received '{}').".format("/".join(pkmndict.wr[str_msg[0]].keys()), str_msg[1])
+    game_name = info[0]
+    
+    if num_info == 2:
+        category = info[1]
         
-        return pkmndict.wr[str_msg[0]][str_msg[1]]
-    elif len_msg == 1:
-        return pkmndict.wr[str_msg[0]]
+        if category not in worldrecords.games[game_name].keys():
+            return "Invalid category name (expected '{}', received '{}')."\
+                   .format("/".join(worldrecords.games[game_name].keys()),
+                           category)
         
+        return worldrecords.games[game_name][category]
+    elif num_info == 1:
+        return " ".join(worldrecords.games[game_name].values())
     else:
-        return "Invalid number of arguments (expected 2 arguments, received '{}').".format(len_msg)
+        return "Syntax: $wr game_abbr category (category is optional and "\
+               "defaults to all possible categories for the selected game"
 
 def dex(message):
-    str_msg = [x for x in message.split(maxsplit=2)[1:]]
-    len_msg = len(str_msg)
+    """Returns a paragraph describing the specie"""
+    info = [x for x in message.split(maxsplit=2)[1:]]
+    num_info = len(info)
     
-    if len_msg == 2:
-        gen = str_msg[0]
-        specie = str_msg[1].capitalize()
+    if num_info == 2:
+        gen = info[0]
+        specie = info[1].capitalize()
         try:
             gen = int(gen)
-            if gen < 6:
+            
+            if gen > 0 and gen < 6:
                 try:
                     return str(pokedex.dex.dex[gen][specie])
                 except KeyError:
-                    return "Invalid pokémon specie for selected generation (expected a valid pokémon specie, received '{}').".format(specie)
+                    return "Invalid pokémon specie for the selected "\
+                           "generation (expected a valid pokémon specie, "\
+                           "received '{}').".format(specie)
             else:
-                return "Invalid generation number (expected an integer value between 3 and 5, received '{}').".format(gen)
+                return "Invalid generation number (expected an integer value "\
+                       "between 1 and 5, received '{}').".format(gen)
         except ValueError:
-            return "'{}' is not an integer.)".format(gen)
+            return "Could not convert '{}' to an integer.".format(gen)
     else:
-        return "Invalid number of arguments (expected 2 arguments, received {}).".format(len_msg)
+        return "Syntax: $dex gen_num specie_name"
+
+def exp(message):
+    """Returns the number of exp gained when the pokemon is defeated"""
+    info = [x for x in message.split(maxsplit=5)[1:]]
+    num_info = len(info)
     
+    if num_info == 3:
+        gen = info[0]
+        specie = info[1].capitalize()
+        level = info[2]
+        try:
+            gen = int(gen)
+            level = int(level)
+            
+            if gen < 6:
+                try:
+                    total_exp = pokedex.dex.dex[gen][specie].base_exp
+                    return formulas.calc_exp(gen, level, exp)
+                except KeyError:
+                    return "Invalid pokémon specie for selected generation "\
+                           "(expected a valid pokémon specie, received '{}')."\
+                           .format(specie)
+            else:
+                return "Invalid generation number (expected an integer value "\
+                       "between 1 and 5, received '{}').".format(gen)
+        except ValueError:
+            return "Could not convert one of the following string to an "\
+                   "integer: '{}' (gen) and '{}' (level))".format(gen, level)
+
 # Initialization of the bot
 globalprotection()
-#globalemote()
+globalemote()
 
 # Infinite loop to run the bot
 while True:
@@ -168,18 +260,20 @@ while True:
             inputchan = input[1].split(" ")[2]
             inputmsg = input[2]
             
-            if inputmsg.startswith("$dv"):
-                output(dv(inputmsg.lower()), inputchan)
-            elif inputmsg.startswith("$wr"):
+            if inputmsg.lower().startswith("$dv"):
+                output(dv(inputmsg), inputchan)
+            elif inputmsg.lower().startswith("$wr"):
                 output(wr(inputmsg.lower()), inputchan)
-            elif inputmsg.startswith("$dex"):
+            elif inputmsg.lower().startswith("$dex"):
                 output(dex(inputmsg), inputchan)
-            elif inputmsg.startswith("$join"):
-                join(inputmsg, inputnick)
-            elif inputmsg.startswith("$quit"):
+            elif inputmsg.lower().startswith("$exp"):
+                output(exp(inputmsg), inputchan)
+            elif inputmsg.lower().startswith("$join"):
+                join(inputmsg)
+            elif inputmsg.lower().startswith("$quit"):
                 quit(inputmsg, inputnick)
-            elif inputmsg.startswith("$spin"):
-                spin(inputchan, inputmsg)                
+            elif inputmsg.lower().startswith("$spin"):
+                output(spin(inputmsg), inputchan)
             
             if inputchan == "#werster":                       
                 if "faq" in inputmsg.lower() and (time.time() - timer) > 60 and "http://pastebin.com/kiyRcY3x" not in inputmsg and inputnick != "moneyhypebot":
