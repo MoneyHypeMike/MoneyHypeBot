@@ -12,7 +12,7 @@ SERVER = "irc.twitch.tv"
 PORT = 6667
 
 # Information to authenticate to twitch IRC server
-NICK = #username in lowercase
+NICK = #name in lowercase
 PASS = #oauth
 CHANNEL = #channel name in lowercase
 
