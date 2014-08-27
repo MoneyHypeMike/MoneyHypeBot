@@ -4,7 +4,7 @@ import threading
 import random
 import time
 import formulas
-import pokedex
+import speciedex
 import worldrecords
 
 # Information to connect to twitch IRC server
@@ -12,9 +12,9 @@ SERVER = "irc.twitch.tv"
 PORT = 6667
 
 # Information to authenticate to twitch IRC server
-NICK = #insert bot name in lowercase here
-PASS = #insert your oauth from http://www.twitchapps.com/tmi/
-CHANNEL = #insert the channel to join in lowercase
+NICK = "moneyhypebot"
+PASS = "oauth:9w919ckrf5p1mweytkh1w7n4sl8tzjt"
+CHANNEL = "#moneyhypemike"
 
 # Information to treat data from twitch IRC server
 BUFFSIZE = 1024
@@ -118,7 +118,7 @@ def dv(message):
     if (5 <= num_info <= 6):
         try:
             gen = int(info[0])
-            name = info[1].capitalize()
+            name = info[1].upper()
             stat_name = stat2int(info[2])
             level = int(info[3])
             stat_value = int(info[4])
@@ -150,7 +150,7 @@ def dv(message):
                        "'{}'.)".format(stat_exp)
             
             try:
-                specie = pokedex.dex.dex[gen][name]
+                specie = speciedex.all.dex[gen][name]
                 return formulas.calc_dv(gen, specie.base_stats[stat_name], 
                                         level, stat_value, stat_exp)
             except KeyError:
@@ -166,27 +166,30 @@ def wr(message):
     info = [x for x in message.split(maxsplit=2)[1:]]
     num_info = len(info)
     
-    if info[0] not in worldrecords.games.keys():
-        return "Invalid game name (expected '{}', received '{}'"\
-               .format("/".join(worldrecords.games.keys()), info[0])
+    if num_info > 0:
+        if info[0] not in worldrecords.games.keys():
+            return "Invalid game name (expected '{}', received '{}'"\
+                   .format("/".join(worldrecords.games.keys()), info[0])
     
-    game_name = info[0]
+        game_name = info[0]
     
-    if num_info == 2:
-        category = info[1]
+        if num_info == 2:
+            category = info[1]
+            
+            if category not in worldrecords.games[game_name].keys():
+                return "Invalid category name (expected '{}', received '{}')."\
+                       .format("/".join(worldrecords.games[game_name].keys()),
+                               category)
         
-        if category not in worldrecords.games[game_name].keys():
-            return "Invalid category name (expected '{}', received '{}')."\
-                   .format("/".join(worldrecords.games[game_name].keys()),
-                           category)
-        
-        return worldrecords.games[game_name][category]
-    elif num_info == 1:
-        return " ".join(worldrecords.games[game_name].values())
+            return worldrecords.games[game_name][category]
+        elif num_info == 1:
+            return " ".join(worldrecords.games[game_name].values())
+        else:
+            return "Syntax: $wr game_abbr category (category is optional and "\
+                   "defaults to all possible categories for the selected game"
     else:
-        return "Syntax: $wr game_abbr category (category is optional and "\
-               "defaults to all possible categories for the selected game"
-
+        return "Syntax: $wr games_abrv category"
+    
 def dex(message):
     """Returns a paragraph describing the specie"""
     info = [x for x in message.split(maxsplit=2)[1:]]
@@ -194,13 +197,12 @@ def dex(message):
     
     if num_info == 2:
         gen = info[0]
-        specie = info[1].capitalize()
+        specie = info[1].upper()
         try:
             gen = int(gen)
-            
             if gen > 0 and gen < 6:
                 try:
-                    return str(pokedex.dex.dex[gen][specie])
+                    return str(speciedex.all.dex[gen][specie])
                 except KeyError:
                     return "Invalid pokémon specie for the selected "\
                            "generation (expected a valid pokémon specie, "\
@@ -220,7 +222,7 @@ def exp(message):
     
     if num_info == 3:
         gen = info[0]
-        specie = info[1].capitalize()
+        specie = info[1].upper()
         level = info[2]
         try:
             gen = int(gen)
@@ -228,8 +230,8 @@ def exp(message):
             
             if gen < 6:
                 try:
-                    total_exp = pokedex.dex.dex[gen][specie].base_exp
-                    return formulas.calc_exp(gen, level, exp)
+                    total_exp = speciedex.all.dex[gen][specie].base_exp
+                    return formulas.calc_exp(gen, level, total_exp)
                 except KeyError:
                     return "Invalid pokémon specie for selected generation "\
                            "(expected a valid pokémon specie, received '{}')."\

@@ -1,0 +1,23 @@
+games = {
+"rb": {"any% glitchless": "World record for Pokémon Red/Blue (any% glitchless): 1:54 (IGT) by Werster (http://goo.gl/JzGB1c).",
+       "151 pokedex": "World record for Pokémon Red/Blue (151 pokedex): 3:02:29 (RTA) by SheNanagans_ (http://goo.gl/NPwHmo)."},
+"y": {"any% nsc": "World record for Pokémon Yellow (any% nsc): No console time have been submitted for this game.",
+      "any% glitchless": "World record for Pokémon Yellow (any% glitchless): 1:59 (IGT) by Werster (http://goo.gl/Ip7lgW) | 5upamayne (http://goo.gl/n6pTJQ) | iMAX1UP (http://goo.gl/SNRhQP)."},
+"gs": {"any%": "World record for Pokémon Gold/Silver (any%): 43:47 (RTA) by Werster (http://goo.gl/f5Nxvv).",
+       "any% glitchless": "World record for Pokémon Gold/Silver (any% glitchless): 3:24 (IGT) by Werster (http://goo.gl/Jh1yME)."},
+"c": {"any% glitchless": "World record for Pokémon Crystal (any% glitchless): 3:22 (IGT) by Werster (http://goo.gl/CckKE0)."},
+"rs": {"any% glitchless": "World record for Pokémon Ruby/Sapphire (any% glitchless): 2:13:53 (IGT) by xSpitFire08x (http://goo.gl/4LxJtx)."},
+"e": {"any% glitchless": "World record for Pokémon Emerald (any% glitchless): 2:43:24 (IGT) by Werster (http://goo.gl/5Fuvd4)."},
+"frlg": {"any% glitchless": "World record for Pokémon FireRed/LeafGreen (any% glitchless): 2:13:48 (IGT) by JP_Xinnam (http://goo.gl/iPF25i).",
+         "Round 2": "World record for Pokémon FireRed/LeafGreen (Round 2): 3:43 (IGT) by Werster (http://goo.gl/Ua4aOm)."},
+"col": {"any%": "World record for Pokémon Colosseum (any%): 4:16 (IGT) by FlareRDB (http://goo.gl/hqJrlk)."},
+"xd":  {"any%": "World record for Pokémon XD: Gale of Darkness (any%): 4:54 (IGT) by LBlueEagle (http://goo.gl/CsO51m)."},
+"dp": {"any%": "World record for Pokémon Diamond/Pearl(any%): 1:05:32 (RTA) by Pokefluke (http://goo.gl/wOlXCG).",
+       "any% glitchless": "World record for Pokémon Diamond/Pearl (any% glitchless): 3:56 (IGT) by GarfieldTheLightning (http://goo.gl/o7PU7A)."},
+"pt": {"any% glitchless": "World record for Pokémon Platinum (any% glitchless): 4:02 (IGT) by MoneyHypeMike (http://goo.gl/JvzN1W)."},
+"hgss": {"any%": "World record for Pokémon HeartGold/SoulSilver (any%): 2:20:20 (RTA) by Werster (http://goo.gl/LHpp44).",
+         "any% glitchless": "World record for Pokémon HeartGold/SoulSilver (any% glitchless): 4:00 (IGT) by Werster (http://goo.gl/wZX0oC)."},
+"bw": {"any% glitchless": "World record for Pokémon Black/White (any% glitchless): 3:27 (IGT) Vulajin (http://goo.gl/M5X4YS)."},
+"b2w2": {"any% glitchless": "World record for Pokémon Black2/White2 (any% glitchless): 3:26 (IGT) by GarfieldTheLighning (http://goo.gl/gB33ts)."},
+"xy": {"any% glitchless": "World record for Pokémon X/Y (any% glitchless): 3:57 (IGT) by iMAX1UP (http://goo.gl/6Bcbbj)."}
+}
