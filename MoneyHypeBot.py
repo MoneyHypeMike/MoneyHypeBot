@@ -12,15 +12,9 @@ SERVER = "irc.twitch.tv"
 PORT = 6667
 
 # Information to authenticate to twitch IRC server
-
-NICK = #name in lowercase
+NICK = #username in lowercase
 PASS = #oauth
-CHANNEL = #channel to join in lowercase
-
-NICK = #insert bot name in lowercase here
-PASS = #insert your oauth from http://www.twitchapps.com/tmi/
-CHANNEL = "#insert the channel to join in lowercase
-
+CHANNEL = #channel name in lowercase
 
 # Information to treat data from twitch IRC server
 BUFFSIZE = 1024
